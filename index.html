@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QJob Sri Lanka - Find & Post Jobs</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo">QJob <span>Sri Lanka</span></div>
+        <nav>
+            <a href="#" class="active">Home</a>
+            <a href="#">Find Jobs</a>
+            <a href="#">Post a Job</a>
+            <a href="#" class="btn-login">Login / Register</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Find Your Dream Job Today</h1>
+            <p>Thousands of jobs in Sri Lanka are waiting for you.</p>
+            <div class="search-box">
+                <input type="text" placeholder="Job title, keywords, or company...">
+                <input type="text" placeholder="Location (e.g., Colombo)...">
+                <button type="button">Search Jobs</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="jobs-container">
+        <h2>Latest Job Vacancies</h2>
+        </section>
+
+    <div id="jobModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Post a New Job Vacancy</h2>
+            <form id="jobForm">
+                <label>Job Title:</label>
+                <input type="text" id="jobTitle" placeholder="e.g., Software Engineer" required>
+
+                <label>Company Name:</label>
+                <input type="text" id="companyName" placeholder="e.g., Tech Corp" required>
+
+                <label>Location:</label>
+                <input type="text" id="jobLocation" placeholder="e.g., Colombo / Remote" required>
+
+                <label>Job Type:</label>
+                <select id="jobType">
+                    <option value="full-time">Full Time</option>
+                    <option value="part-time">Part Time</option>
+                    <option value="remote">Remote</option>
+                </select>
+
+                <button type="submit" class="btn-submit">Submit Job</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('jobModal');
+        const closeBtn = document.querySelector('.close-btn');
+        const jobForm = document.getElementById('jobForm');
+        const jobsContainer = document.querySelector('.jobs-container');
+
+        // Modal එක Open/Close කිරීම
+        document.querySelectorAll('nav a').forEach(link => {
+            if(link.textContent === "Post a Job") {
+                link.addEventListener('click', (e) => { e.preventDefault(); modal.style.display = 'flex'; });
+            }
+        });
+        closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+        window.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+        // සේව් කරපු Jobs සේරම Backend එකෙන් අරන් Page එකට දාන Function එක
+        function loadJobs() {
+            fetch('/api/jobs')
+                .then(res => res.json())
+                .then(jobs => {
+                    // කලින් තිබ්බ ඒවා අයින් කරලා Heading එක විතරක් ඉතුරු කරනවා
+                    jobsContainer.innerHTML = '<h2>Latest Job Vacancies</h2>';
+                    
+                    if(jobs.length === 0) {
+                        jobsContainer.innerHTML += '<p style="text-align:center; color:#777;">No jobs found. Be the first to post!</p>';
+                        return;
+                    }
+
+                    jobs.forEach(job => {
+                        const card = document.createElement('div');
+                        card.classList.add('job-card');
+                        card.innerHTML = `
+                            <div class="job-details">
+                                <h3>${job.title}</h3>
+                                <p class="company">${job.company}</p>
+                                <p class="location">📍 ${job.location}</p>
+                                <span class="job-type ${job.type}">${job.type.charAt(0).toUpperCase() + job.type.slice(1)}</span>
+                            </div>
+                            <button class="btn-apply">Apply Now</button>
+                        `;
+                        jobsContainer.appendChild(card);
+                    });
+                });
+        }
+
+        // Form එක Submit කරලා දත්ත Backend එකට යැවීම
+        jobForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const jobData = {
+                title: document.getElementById('jobTitle').value,
+                company: document.getElementById('companyName').value,
+                location: document.getElementById('jobLocation').value,
+                type: document.getElementById('jobType').value
+            };
+
+            fetch('/api/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jobData)
+            }).then(() => {
+                jobForm.reset();
+                modal.style.display = 'none';
+                loadJobs(); // ලිස්ට් එක Refresh කරනවා
+            });
+        });
+
+        // සයිට් එක ලෝඩ් වෙද්දීම Jobs ටික පෙන්නන්න
+        loadJobs();
+    </script>
+</body>
+</html>
